@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SQL Injection Detection with ML Models - Interactive Demo</title>
+    <style>
+        /* --- General & Variables --- */
+        
+         :root {
+            --primary-color: #007bff;
+            --success-color: #28a745;
+            --danger-color: #dc3545;
+            --bg-light: #f4f6f9;
+            --text-dark: #343a40;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            font-family: var(--font-family);
+            background-color: var(--bg-light);
+            color: var(--text-dark);
+            margin: 0;
+            padding: 10px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .container {
+            width: 98%;
+            max-width: 1100px;
+            margin: 10px auto;
+            padding: 0;
+        }
+        /* --- Header & Titles --- */
+        
+        .header {
+            text-align: center;
+            background-color: var(--primary-color);
+            color: white;
+            padding: 20px 10px;
+            border-radius: 10px 10px 0 0;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+        
+        .github-link {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            text-decoration: none;
+            color: white;
+            font-size: 0.9em;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        
+        .github-link:hover {
+            background-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        h1 {
+            font-size: 1.8em;
+            margin: 0;
+            font-weight: 700;
+        }
+        
+        @media (min-width: 768px) {
+            h1 {
+                font-size: 2.5em;
+            }
+        }
+        /* --- ACCURACY Display (Highly Visible) --- */
+        
+        .metric-display {
+            text-align: center;
+            background-color: #e2f0e6;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 2px solid var(--success-color);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        .metric-display h2 {
+            font-size: 1.1em;
+            color: var(--text-dark);
+            margin-bottom: 5px;
+            border-bottom: none;
+            padding-bottom: 0;
+            font-weight: 600;
+        }
+        
+        .metric-display strong {
+            font-size: 2.5em;
+            color: var(--success-color);
+            display: block;
+            margin-top: 5px;
+            letter-spacing: 1px;
+        }
+        
+        @media (min-width: 768px) {
+            .metric-display strong {
+                font-size: 3.5em;
+            }
+        }
+        /* --- Cards & General Styling --- */
+        
+        .interactive-card,
+        .info-card,
+        .graphs-section {
+            padding: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .interactive-card {
+            border-radius: 8px;
+            margin-bottom: 30px;
+            background: white;
+        }
+        /* Color-coded instruction text */
+        
+        .colored-text-container {
+            font-size: 1em;
+            color: #6c757d;
+            margin-bottom: 15px;
+        }
+        
+        .colored-text-normal {
+            color: var(--success-color);
+            font-weight: bold;
+        }
+        
+        .colored-text-sqli {
+            color: var(--danger-color);
+            font-weight: bold;
+        }
+        
+        textarea {
+            width: 100%;
+            font-size: 15px;
+        }
+        
+        button {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 15px;
+            font-size: 1em;
+            width: 100%;
+            cursor: pointer;
+            border: none;
+            border-radius: 6px;
+        }
+        
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        #result {
+            font-size: 1.1em;
+            margin-top: 25px;
+            padding: 20px;
+            border-radius: 8px;
+            font-weight: 600;
+            text-align: center;
+            border: 1px solid;
+            display: none;
+        }
+        
+        .normal {
+            background-color: #d4edda;
+            color: var(--success-color);
+            border-color: #c3e6cb;
+        }
+        
+        .sqli {
+            background-color: #f8d7da;
+            color: var(--danger-color);
+            border-color: #f5c6cb;
+        }
+        
+        .loading {
+            background-color: #fff3cd;
+            color: #856404;
+            border-color: #ffeeba;
+        }
+        /* --- Informative Section Layout (Responsive Grid) --- */
+        
+        .info-section {
+            display: grid;
+            grid-template-columns: 1fr;
+            /* Mobile First: 1 column (Vertical Stack) */
+            gap: 20px;
+            margin-top: 20px;
+        }
+        /* PC/Desktop (Largeur >= 992px) : 2 columns */
+        
+        @media (min-width: 992px) {
+            .info-section {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .info-card {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            line-height: 1.6;
+        }
+        
+        .info-card h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+            border-bottom: 1px dashed #e9ecef;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+        }
+        /* --- Examples Section --- */
+        
+        .examples-section {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin: 15px 0;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        .examples-section h4 {
+            margin-top: 0;
+            color: var(--primary-color);
+        }
+        
+        .examples-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+        }
+        
+        @media (min-width: 768px) {
+            .examples-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        .example-item {
+            background: white;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #e9ecef;
+            font-family: monospace;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .example-item:hover {
+            background-color: #e9ecef;
+            transform: translateY(-2px);
+        }
+        
+        .example-normal {
+            border-left: 3px solid var(--success-color);
+        }
+        
+        .example-sqli {
+            border-left: 3px solid var(--danger-color);
+        }
+        /* --- Models Section --- */
+        
+        .models-section {
+            margin-top: 30px;
+        }
+        
+        .model-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+        }
+        
+        .model-card h3 {
+            color: var(--primary-color);
+            margin-top: 0;
+            border-bottom: 1px dashed #e9ecef;
+            padding-bottom: 10px;
+        }
+        
+        .model-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+            border-radius: 6px;
+            background-color: #f8f9fa;
+        }
+        
+        .stat-value {
+            font-size: 1.2em;
+            font-weight: bold;
+            display: block;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            color: #6c757d;
+        }
+        
+        .current-model {
+            border: 2px solid var(--primary-color);
+            background-color: #f0f8ff;
+        }
+        /* --- Graphs Section (Vertical Stacking) --- */
+        
+        .graphs-section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.05);
+            margin-top: 30px;
+            text-align: center;
+        }
+        
+        .graphs-grid {
+            display: flex;
+            flex-direction: column;
+            /* Stacking VERTICALLY */
+            gap: 30px;
+            margin-top: 20px;
+        }
+        
+        .graph-item {
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #fafafa;
+        }
+        
+        .graph-item img {
+            max-width: 100%;
+            height: auto;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+        }
+        
+        .graph-item p {
+            font-style: italic;
+            color: #6c757d;
+            margin-top: 10px;
+            font-size: 0.9em;
+        }
+        
+        .performance-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.85em;
+        }
+        
+        .performance-table th,
+        .performance-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: center;
+        }
+        
+        .performance-table th {
+            background-color: #e9ecef;
+            color: var(--text-dark);
+        }
+        
+        .current-model-row {
+            background-color: #f0f8ff;
+            font-weight: bold;
+        }
+        
+        .github-footer {
+            text-align: center;
+            margin-top: 40px;
+            padding: 20px;
+            background-color: #f8f9fa;
+            border-radius: 10px;
+        }
+        
+        .github-footer a {
+            color: var(--primary-color);
+            text-decoration: none;
+            font-weight: bold;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .github-footer a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="container">
+        <div class="header">
+            <a href="https://github.com/aymensed/SQL-Injection-Detection-Comparative-Models" class="github-link" target="_blank">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                </svg> View on GitHub
+            </a>
+            <h1>SQL Injection Detection with ML Models 🛡️</h1>
+            <p class="subtitle">Real-time analysis powered by SVM model with TF-IDF features</p>
+        </div>
+
+        <div class="metric-display">
+            <h2>SVM Model Performance on Unseen Data</h2>
+            <strong>ACCURACY: 98.56%</strong>
+            <p>(Currently Integrated Model)</p>
+        </div>
+
+        <div class="interactive-card">
+            <h2>1. Enter Query to Test</h2>
+            <div class="colored-text-container">
+                Enter the user query below to determine if it is a <span class="colored-text-normal">Normal</span> or <span class="colored-text-sqli">SQL Injection (SQLi)</span> attempt.
+            </div>
+
+            <textarea id="queryInput" rows="7" placeholder="Examples: ' OR 1=1 -- or SELECT name, email FROM users;"></textarea>
+
+            <div class="examples-section">
+                <h4>Try these examples:</h4>
+                <div class="examples-grid">
+                    <div class="example-item example-normal" onclick="document.getElementById('queryInput').value = 'SELECT name, email FROM users';">SELECT name, email FROM users</div>
+                    <div class="example-item example-sqli" onclick="document.getElementById('queryInput').value = `' OR 1=1 -- `;">' OR 1=1 -- </div>
+                    <div class="example-item example-normal" onclick="document.getElementById('queryInput').value = 'UPDATE products SET price=10 WHERE id=5';">UPDATE products SET price=10 WHERE id=5</div>
+                    <div class="example-item example-sqli" onclick="document.getElementById('queryInput').value = `'; DROP TABLE users-- `;">'; DROP TABLE users-- </div>
+                </div>
+            </div>
+
+            <button onclick="sendQuery()">Analyze Query with SVM</button>
+
+            <div id="result">
+                <span id="result-text">The prediction result will appear here.</span>
+                <span id="result-details"></span>
+            </div>
+        </div>
+
+        <div class="models-section">
+            <h2>2. Implemented Models Overview</h2>
+
+            <div class="model-card current-model">
+                <h3>✅ Support Vector Machine (SVM) - Currently Integrated</h3>
+                <p>We used a Support Vector Machine with a linear kernel (`kernel='linear'`) and regularization parameter C = 0.1. The input queries were transformed into vectors by applying TF-IDF with 3000 features as the maximum. We dropped duplicates
+                    and split the dataset into 80% training and 20% testing sets prior to model training.</p>
+                <div class="model-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">98.56%</span>
+                        <span class="stat-label">Accuracy</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">96.25%</span>
+                        <span class="stat-label">Recall</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">99.86%</span>
+                        <span class="stat-label">Precision</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">99.02%</span>
+                        <span class="stat-label">F1 Score</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="model-card">
+                <h3>Logistic Regression (LR)</h3>
+                <p>We trained a Logistic Regression classifier to detect SQL injection payloads using TF-IDF features (maximum of 3000 features). The classifier was initialized with solver='liblinear' and penalty='l1'. After removing duplicate queries, the
+                    dataset was divided into 80% for training and 20% for testing.</p>
+                <div class="model-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">98.12%</span>
+                        <span class="stat-label">Accuracy</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">95.25%</span>
+                        <span class="stat-label">Recall</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="model-card">
+                <h3>Multilayer Perceptron (MLP)</h3>
+                <p>We trained a Multi-Layer Perceptron (MLP) neural network Using ReLU activation functions with three hidden layers comprising 512, 256, and 128 units respectively. For binary classification, the output layer employed a sigmoid activation
+                    function. Using TF-IDF with a maximum of 3000 characteristics, input queries were vectorized.</p>
+                <div class="model-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">99.44%</span>
+                        <span class="stat-label">Accuracy</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">98.98%</span>
+                        <span class="stat-label">Recall</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="model-card">
+                <h3>Recurrent Neural Network (RNN)</h3>
+                <p>We trained a Recurrent Neural Network to detect sequential patterns in SQL injection attempts by feeding in tokenized and padded input queries. Character filters were disabled, and case sensitivity was preserved during preprocessing to
+                    maintain the SQL syntax and structure.</p>
+                <div class="model-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">99.06%</span>
+                        <span class="stat-label">Accuracy</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">97.51%</span>
+                        <span class="stat-label">Recall</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="model-card">
+                <h3>Long Short-Term Memory (LSTM)</h3>
+                <p>We have trained an LSTM network to recognize sequential patterns in SQL injection attempts by feeding in tokenized and padded sequences. Character filters were disabled and case sensitivity was preserved during preprocessing to preserve
+                    the integrity of the SQL syntax.</p>
+                <div class="model-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">99.62%</span>
+                        <span class="stat-label">Accuracy</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">99.25%</span>
+                        <span class="stat-label">Recall</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="model-card">
+                <h3>Bidirectional Encoder Representations from Transformers (BERT)</h3>
+                <p>We selected BERT as our SQL injection detection model due to its high capacity to comprehend both meaning and context of textual information, particularly in structured input such as SQL queries. What makes BERT distinctively effective
+                    is the fact that it processes the whole input bidirectionally which helps it pick up on subtle patterns that might indicate an attack.</p>
+                <div class="model-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">99.92%</span>
+                        <span class="stat-label">Accuracy</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">99.78%</span>
+                        <span class="stat-label">Recall</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="info-section">
+
+            <div class="info-card">
+                <h3>What is TF-IDF & SVM? 🤖</h3>
+                <p><strong>Support Vector Machine (SVM)</strong> is a powerful classification algorithm that works by finding the optimal hyperplane that maximizes the margin between data classes.</p>
+                <p><strong>Why SVM for SQLi?</strong> We use the **TF-IDF (Term Frequency-Inverse Document Frequency)** technique to convert text queries into numerical vectors, which the SVM model then uses to classify them as malicious or legitimate. This
+                    approach is highly effective for text classification.</p>
+                <p><strong>Current Implementation:</strong> Our integrated SVM model uses a linear kernel with C=0.1 and processes queries through TF-IDF vectorization with 3000 maximum features.</p>
+            </div>
+
+            <div class="info-card">
+                <h3>Dataset Used 📊</h3>
+                <p>The model was fine-tuned on a comprehensive dataset of <strong>30,614 labeled queries</strong>, specifically designed for SQLi detection. The data is composed of:</p>
+                <ul>
+                    <li>**Label 0 (Normal)**: Standard SQL statements and benign user inputs.</li>
+                    <li>**Label 1 (SQLi)**: Various modern SQL injection patterns including Tautologies and Error-based payloads.</li>
+                </ul>
+                <p><strong>Preprocessing:</strong> Input strings were tokenized, lowercased, and converted into features using the **TfidfVectorizer** object trained on our dataset. This is crucial for consistency.</p>
+            </div>
+
+            <div class="info-card">
+                <h3>Our Work and Methodology</h3>
+                <p>Our work implemented a binary classification system using the **Support Vector Machine (SVM)** with a **Linear Kernel** for optimized performance in high-dimensional feature spaces.</p>
+                <p><strong>Key Hyperparameters for SVM:</strong></p>
+                <ul>
+                    <li><strong>Feature Extraction:</strong> TF-IDF (max 3000 features)</li>
+                    <li><strong>Kernel:</strong> Linear</li>
+                    <li><strong>Regularization (C):</strong> 0.1</li>
+                    <li><strong>Data Split:</strong> 80% training, 20% testing</li>
+                </ul>
+                <p>This approach ensured the model achieved high performance and reliable generalization capability.</p>
+            </div>
+
+            <div class="info-card">
+                <h3>Performance Summary</h3>
+                <p>The SVM model achieved **excellent performance** on the unseen test set, demonstrating its effectiveness for SQL injection detection tasks.</p>
+
+                <h4>Performance Metrics Comparison (Test Data)</h4>
+                <table class="performance-table">
+                    <thead>
+                        <tr>
+                            <th>Model</th>
+                            <th>Accuracy</th>
+                            <th>Precision</th>
+                            <th>Recall</th>
+                            <th>F1 Score</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="current-model-row">
+                            <td><strong>SVM (Current)</strong></td>
+                            <td><strong>98.56%</strong></td>
+                            <td><strong>99.86%</strong></td>
+                            <td><strong>96.25%</strong></td>
+                            <td><strong>99.02%</strong></td>
+                        </tr>
+                        <tr>
+                            <td>LR</td>
+                            <td>98.12%</td>
+                            <td>99.72%</td>
+                            <td>95.25%</td>
+                            <td>97.44%</td>
+                        </tr>
+                        <tr>
+                            <td>MLP</td>
+                            <td>99.44%</td>
+                            <td>99.51%</td>
+                            <td>98.98%</td>
+                            <td>99.25%</td>
+                        </tr>
+                        <tr>
+                            <td>RNN</td>
+                            <td>99.06%</td>
+                            <td>100%</td>
+                            <td>97.51%</td>
+                            <td>98.74%</td>
+                        </tr>
+                        <tr>
+                            <td>LSTM</td>
+                            <td>99.62%</td>
+                            <td>99.73%</td>
+                            <td>99.25%</td>
+                            <td>99.49%</td>
+                        </tr>
+                        <tr>
+                            <td>BERT</td>
+                            <td>99.92%</td>
+                            <td>100%</td>
+                            <td>99.78%</td>
+                            <td>99.89%</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+        </div>
+        <div class="graphs-section">
+            <h2>3. Performance Visualizations "BERT"</h2>
+            <div class="graphs-grid">
+
+                <div class="graph-item">
+                    <img src="loss.png" alt="Training Loss Curve">
+                    <p>Figure 4.4 **Performance Curve** for the BERT Model. The visualization confirms robust performance and proper training.</p>
+                </div>
+
+                <div class="graph-item">
+                    <img src="accuracy.png" alt="Model Accuracy Curve">
+                    <p>Figure 4.5 **Accuracy Curve** on the Validation Set. The high accuracy demonstrates the effectiveness of the BERT model in this classification task.</p>
+                </div>
+
+                <div class="graph-item">
+                    <p>Confusion Matrix: Visually confirms the excellent separation of benign (Label 0) and malicious (Label 1) instances, achieving 96.25% Recall on unseen data.</p>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="github-footer">
+            <p>Explore the complete project, source code, and detailed documentation:</p>
+            <a href="https://github.com/aymensed/SQL-Injection-Detection-Comparative-Models" target="_blank">
+                <svg width="20" height="20" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/>
+                </svg> GitHub Repository: SQL-Injection-Detection-Comparative-Models
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // L'URL de votre API FastAPI.
+        const API_URL = 'https://sqli-detector-api-aymen.onrender.com/predict_sqli';
+
+        async function sendQuery() {
+            const queryText = document.getElementById('queryInput').value;
+            const resultDiv = document.getElementById('result');
+            const resultText = document.getElementById('result-text');
+            const resultDetails = document.getElementById('result-details');
+
+            // 1. État de chargement (UX)
+            resultText.innerHTML = '⚙️ Analyzing query with SVM model... Please wait.';
+            resultDetails.innerHTML = 'Processing through TF-IDF vectorization and SVM classification...';
+            resultDiv.className = 'loading';
+            resultDiv.style.display = 'block';
+
+            if (!queryText.trim()) {
+                resultText.innerHTML = '🛑 Please enter a query to analyze.';
+                resultDetails.innerHTML = '';
+                resultDiv.classList.remove('loading', 'normal');
+                resultDiv.classList.add('sqli');
+                return;
+            }
+
+            try {
+                // 2. Envoi de la requête à l'API
+                const response = await fetch(API_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        text: queryText
+                    })
+                });
+
+                // Gérer les erreurs HTTP
+                if (!response.ok) {
+                    const errorData = await response.json().catch(() => ({
+                        detail: `HTTP Status ${response.status}`
+                    }));
+                    throw new Error(`API Error: ${errorData.detail}`);
+                }
+
+                // 3. Traitement de la réponse
+                const data = await response.json();
+
+                // Afficher le résultat
+                resultText.innerHTML = `<strong>RESULT:</strong> ${data.prediction}`;
+                resultDetails.innerHTML = `Query analyzed: "${data.query.substring(0, 50)}${data.query.length > 50 ? '...' : ''}"`;
+
+                // Appliquer le style
+                if (data.is_sqli) {
+                    resultDiv.classList.remove('loading', 'normal');
+                    resultDiv.classList.add('sqli');
+                } else {
+                    resultDiv.classList.remove('loading', 'sqli');
+                    resultDiv.classList.add('normal');
+                }
+
+            } catch (error) {
+                console.error('Connection or API error:', error);
+                // Afficher une erreur en cas de problème de connexion
+                resultText.innerHTML = `❌ Connection Error: Is the Uvicorn API running?`;
+                resultDetails.innerHTML = `Details: ${error.message.substring(0, 80)}...`;
+                resultDiv.classList.remove('loading', 'normal');
+                resultDiv.classList.add('sqli');
+            }
+        }
+    </script>
+</body>
+
+</html>
