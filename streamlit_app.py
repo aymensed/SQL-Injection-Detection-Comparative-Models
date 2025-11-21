@@ -309,29 +309,6 @@ with info_cols[1]:
 
 st.markdown("---")
 
-# --- 4. Performance Visualizations (Graphs Section) ---
-st.header("4. Performance Visualizations")
-
-
-col_graph1, col_graph2 = st.columns(2)
-
-with col_graph1:
-    st.subheader("Training Loss Curve (BERT Example)")
-    st.image(
-        "loss.png",
-        caption="Figure 4.4 Courbe de performance (Loss) pour le modèle BERT.",
-        use_column_width=True
-    )
-
-with col_graph2:
-    st.subheader("Accuracy Curve (BERT Example)")
-    st.image(
-        "accuracy.png",
-        caption="Figure 4.5 Courbe d'Accuracy sur l'ensemble de Validation (BERT).",
-        use_column_width=True
-    )
-
-st.markdown("---")
 
 # --- Footer ---
 st.markdown("""
@@ -342,6 +319,7 @@ st.markdown("""
     </a>
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
