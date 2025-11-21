@@ -5,7 +5,9 @@ import os
 
 # --- 0. Configuration et Chargement des Modèles (Mise en cache) ---
 
-# Les chemins des fichiers de modèle que vous avez uploadés
+# NOTE: Si vous avez mis ces fichiers dans un dossier 'code/', changez les chemins ici:
+# MODEL_PATH = 'code/svm_sqli_model.joblib'
+# VECTORIZER_PATH = 'code/vectorizer.joblib'
 MODEL_PATH = 'svm_sqli_model.joblib'
 VECTORIZER_PATH = 'vectorizer.joblib'
 
@@ -61,12 +63,11 @@ def predict_sqli(query_text: str):
 
     return is_sqli, result_text, result_icon
 
-# --- Fonction de Callback pour les exemples (CORRECTION APPLIQUÉE ICI) ---
+# --- Fonction de Callback pour les exemples ---
 
 def update_query_input(text):
     """Met à jour st.session_state.query_input."""
     st.session_state.query_input = text
-    # st.rerun() n'est pas nécessaire ici car le callback est exécuté lors du rerun de Streamlit.
 
 
 # --- 2. Interface Streamlit (Recréation de index.html) ---
@@ -163,7 +164,7 @@ with col_button:
     st.markdown("<div style='height: 110px;'></div>", unsafe_allow_html=True) 
     analyze_button = st.button("Analyze Query with SVM", type="primary", use_container_width=True)
 
-# Exemples cliquables (CORRECTION APPLIQUÉE ICI)
+# Exemples cliquables
 with st.expander("Cliquez ici pour essayer des exemples (Copie dans la zone de texte)"):
     examples = [
         ("SELECT name, email FROM users", "Normal", "#c3e6cb"),
@@ -175,13 +176,12 @@ with st.expander("Cliquez ici pour essayer des exemples (Copie dans la zone de t
     example_cols = st.columns(len(examples))
     for i, (text, label, color) in enumerate(examples):
         # Utilisation du paramètre on_click pour appeler la fonction de callback
-        # L'argument args est la valeur à passer à la fonction update_query_input
         example_cols[i].button(
             f"[{label}] {text}", 
             key=f"example_{i}", 
             use_container_width=True,
             on_click=update_query_input,
-            args=(text,) # Le tuple (text,) est l'argument passé à update_query_input
+            args=(text,) # Argument pour la fonction update_query_input
         )
 
 
@@ -284,6 +284,8 @@ with info_cols[0]:
         st.subheader("What is TF-IDF & SVM? 🤖")
         st.markdown("""
         La **Support Vector Machine (SVM)** est un algorithme qui trouve l'hyperplan optimal maximisant la marge entre les classes.
+        
+        
 
         Le **TF-IDF (Term Frequency-Inverse Document Frequency)** est la technique utilisée pour transformer les requêtes textuelles en vecteurs numériques exploitables par le modèle SVM.
 
