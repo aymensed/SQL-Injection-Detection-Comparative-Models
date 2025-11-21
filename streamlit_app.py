@@ -311,7 +311,7 @@ st.markdown("---")
 
 # --- 4. Performance Visualizations (Graphs Section) ---
 st.header("4. Performance Visualizations")
-st.markdown("*(Si vous avez les images `loss.png` et `accuracy.png`, elles s'afficheront ici.)*")
+
 
 col_graph1, col_graph2 = st.columns(2)
 
@@ -342,5 +342,6 @@ st.markdown("""
     </a>
 </div>
 """, unsafe_allow_html=True)
+
 
 
