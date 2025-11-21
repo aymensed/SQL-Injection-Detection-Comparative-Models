@@ -8,8 +8,8 @@ import os
 # NOTE: Si vous avez mis ces fichiers dans un dossier 'code/', changez les chemins ici:
 # MODEL_PATH = 'CODE/svm_sqli_model.joblib'
 # VECTORIZER_PATH = 'CODE/vectorizer.joblib'
-MODEL_PATH = 'code/svm_sqli_model.joblib'
-VECTORIZER_PATH = 'code/vectorizer.joblib'
+MODEL_PATH = 'CODE/svm_sqli_model.joblib'
+VECTORIZER_PATH = 'CODE/vectorizer.joblib'
 
 # st.cache_resource garantit que les modèles ne sont chargés qu'UNE SEULE FOIS.
 @st.cache_resource
@@ -342,4 +342,5 @@ st.markdown("""
     </a>
 </div>
 """, unsafe_allow_html=True)
+
 
